@@ -1,0 +1,177 @@
+Abyssinia Cl, [05.11.2025 05:54]
+import java.util.*;
+
+public class PlayfairCipher {
+
+    private static char[][] matrix = new char[5][5];
+    private static String key;
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("======================================");
+        System.out.println("        🔐 PLAYFAIR CIPHER        ");
+        System.out.println("======================================");
+
+        System.out.print("Enter your key: ");
+        key = sc.nextLine().toUpperCase().replaceAll("[^A-Z]", "");
+        key = key.replace("J", "I"); // combine I and J
+
+        createMatrix(key);
+
+        while (true) {
+            System.out.println("\n--------------------------------------");
+            System.out.println("Choose an option:");
+            System.out.println("1. 🔒 Encrypt Text");
+            System.out.println("2. 🔓 Decrypt Text");
+            System.out.println("3. ❌ Exit");
+            System.out.print("Enter your choice (1-3): ");
+            String choice = sc.nextLine();
+
+            switch (choice) {
+                case "1":
+                    System.out.print("\nEnter plaintext: ");
+                    String plain = sc.nextLine().toUpperCase().replaceAll("[^A-Z]", "");
+                    plain = plain.replace("J", "I");
+
+                    String encrypted = encrypt(plain);
+                    System.out.println("\n✅ Encrypted Text: " + encrypted);
+                    break;
+
+                case "2":
+                    System.out.print("\nEnter ciphertext: ");
+                    String cipher = sc.nextLine().toUpperCase().replaceAll("[^A-Z]", "");
+                    cipher = cipher.replace("J", "I");
+
+                    String decrypted = decrypt(cipher);
+                    System.out.println("\n✅ Decrypted Text: " + decrypted);
+                    break;
+
+                case "3":
+                    System.out.println("\n👋 Exiting program... Goodbye!");
+                    System.out.println("======================================");
+                    sc.close();
+                    return;
+
+                default:
+                    System.out.println("\n⚠️ Invalid choice! Please enter 1, 2, or 3.");
+            }
+        }
+    }
+
+    // -------------------- MATRIX CREATION --------------------
+
+    private static void createMatrix(String key) {
+        StringBuilder sb = new StringBuilder();
+        Set<Character> used = new HashSet<>();
+
+        for (char c : key.toCharArray()) {
+            if (!used.contains(c)) {
+                used.add(c);
+                sb.append(c);
+            }
+        }
+
+        for (char c = 'A'; c <= 'Z'; c++) {
+            if (c == 'J') continue;
+            if (!used.contains(c)) {
+                used.add(c);
+                sb.append(c);
+            }
+        }
+
+        int index = 0;
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 5; j++)
+                matrix[i][j] = sb.charAt(index++);
+
+        printMatrix();
+    }
+
+    private static void printMatrix() {
+        System.out.println("\nPlayfair Cipher Matrix (I = J):");
+        System.out.println("--------------------------------------");
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++)
+                System.out.print(matrix[i][j] + " ");
+            System.out.println();
+        }
+        System.out.println("--------------------------------------");
+    }
+
+    // -------------------- ENCRYPTION --------------------
+
+    private static String prepareText(String text) {
+        StringBuilder sb = new StringBuilder(text);
+        for (int i = 0; i < sb.length() - 1; i += 2) {
+            if (sb.charAt(i) == sb.charAt(i + 1))
+                sb.insert(i + 1, 'X');
+        }
+        if (sb.length() % 2 != 0)
+            sb.append('X');
+        return sb.toString();
+    }
+
+    private static int[] findPos(char c) {
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 5; j++)
+                if (matrix[i][j] == c)
+                    return new int[]{i, j};
+        return null;
+    }
+
+Abyssinia Cl, [05.11.2025 05:54]
+private static String encrypt(String text) {
+        text = prepareText(text);
+        StringBuilder cipher = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i += 2) {
+            char a = text.charAt(i);
+            char b = text.charAt(i + 1);
+            int[] posA = findPos(a);
+            int[] posB = findPos(b);
+
+            if (posA[0] == posB[0]) { // same row
+                cipher.append(matrix[posA[0]][(posA[1] + 1) % 5]);
+                cipher.append(matrix[posB[0]][(posB[1] + 1) % 5]);
+            } else if (posA[1] == posB[1]) { // same column
+                cipher.append(matrix[(posA[0] + 1) % 5][posA[1]]);
+                cipher.append(matrix[(posB[0] + 1) % 5][posB[1]]);
+            } else { // rectangle
+                cipher.append(matrix[posA[0]][posB[1]]);
+                cipher.append(matrix[posB[0]][posA[1]]);
+            }
+        }
+        return cipher.toString();
+    }
+
+    // -------------------- DECRYPTION --------------------
+
+    private static String decrypt(String text) {
+        StringBuilder plain = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i += 2) {
+            char a = text.charAt(i);
+            char b = text.charAt(i + 1);
+            int[] posA = findPos(a);
+            int[] posB = findPos(b);
+
+            if (posA[0] == posB[0]) { // same row
+                plain.append(matrix[posA[0]][(posA[1] + 4) % 5]);
+                plain.append(matrix[posB[0]][(posB[1] + 4) % 5]);
+            } else if (posA[1] == posB[1]) { // same column
+                plain.append(matrix[(posA[0] + 4) % 5][posA[1]]);
+                plain.append(matrix[(posB[0] + 4) % 5][posB[1]]);
+            } else { // rectangle
+                plain.append(matrix[posA[0]][posB[1]]);
+                plain.append(matrix[posB[0]][posA[1]]);
+            }
+        }
+
+        // Clean filler Xs
+        String cleaned = plain.toString()
+                .replaceAll("X(?=[A-Z])", "")
+                .replaceAll("X$", "");
+        return cleaned;
+    }
+}
